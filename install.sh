@@ -18,8 +18,12 @@ configs="$(inspect_label "$container" com.docker.compose.project.config_files)"
 opts="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$container" | sed -n 's/^NODE_OPTIONS=//p' | head -n 1)"
 mkdir -p "$project_dir/persona-vision"
 target="$project_dir/persona-vision/persona-vision.cjs"
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$script_dir/server/persona-vision.cjs" ]; then
+script_source="${BASH_SOURCE[0]:-}"
+script_dir=''
+if [ -n "$script_source" ] && [ -f "$script_source" ]; then
+  script_dir="$(cd "$(dirname "$script_source")" && pwd)"
+fi
+if [ -n "$script_dir" ] && [ -f "$script_dir/server/persona-vision.cjs" ]; then
   cp "$script_dir/server/persona-vision.cjs" "$target.tmp"
 else
   curl --fail --location --silent --show-error 'https://raw.githubusercontent.com/tlsiddl/marinara-persona-vision/main/server/persona-vision.cjs' -o "$target.tmp"

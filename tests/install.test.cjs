@@ -24,3 +24,25 @@ test('compose install preserves memory NODE_OPTIONS and existing files', () => {
     assert.match(fs.readFileSync(path.join(project,'calls'),'utf8'),/up -d --no-deps --force-recreate marinara/);
   } finally { fs.rmSync(root,{recursive:true,force:true}); }
 });
+
+test('installer read from stdin downloads runtime and completes with existing memory patch', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pv-install-stdin-'));
+  try {
+    const bin = path.join(root, 'bin'), project = path.join(root, 'project');
+    fs.mkdirSync(bin); fs.mkdirSync(project);
+    const original = path.join(project, 'docker-compose.yml');
+    fs.writeFileSync(original, 'services:\n  marinara:\n    image: existing\n');
+    fs.writeFileSync(path.join(bin, 'docker'), `#!/usr/bin/env bash\nif [ "$1" = ps ]; then echo engine-marinara-1; elif [ "$1" = inspect ]; then case "$3" in *working_dir*) echo "$TEST_PROJECT";; *config_files*) echo "$TEST_PROJECT/docker-compose.yml";; *service*) echo marinara;; *Config.Env*) echo 'NODE_OPTIONS=--require=/app/memory-module/marinara-memory-runtime.cjs';; esac; elif [ "$1" = compose ]; then printf '%s\\n' "$*" >> "$TEST_PROJECT/calls"; else exit 1; fi\n`, {mode:0o755});
+    fs.writeFileSync(path.join(bin, 'curl'), `#!/usr/bin/env bash\nwhile [ "$#" -gt 0 ]; do if [ "$1" = -o ]; then shift; cp "$TEST_RUNTIME" "$1"; exit; fi; shift; done\nexit 1\n`, {mode:0o755});
+    const runtime = path.resolve(__dirname, '../server/persona-vision.cjs');
+    const installer = fs.readFileSync(path.resolve(__dirname, '../install.sh'), 'utf8');
+    const result = spawnSync('bash', [], {input:installer, encoding:'utf8', env:{...process.env, PATH:bin+':'+process.env.PATH, TEST_PROJECT:project, TEST_RUNTIME:runtime}});
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(fs.readFileSync(path.join(project, 'persona-vision/persona-vision.cjs')), fs.readFileSync(runtime));
+    assert.equal(fs.readFileSync(original, 'utf8'), 'services:\n  marinara:\n    image: existing\n');
+    const override = fs.readFileSync(path.join(project, 'docker-compose.persona-vision.yml'), 'utf8');
+    assert.match(override, /memory-module\/marinara-memory-runtime\.cjs/);
+    assert.match(override, /persona-vision\/persona-vision\.cjs/);
+    assert.match(fs.readFileSync(path.join(project, 'calls'), 'utf8'), /up -d --no-deps --force-recreate marinara/);
+  } finally { fs.rmSync(root, {recursive:true, force:true}); }
+});
