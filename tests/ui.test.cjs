@@ -3,10 +3,14 @@ const test=require('node:test'), assert=require('node:assert/strict'), fs=requir
 test('UI reads current room, saves toggle and rechecks after a room change',async()=>{
   const els={}; for(const k of ['section','#enabled','#state','#error','#open','#close']) els[k]={textContent:'',checked:false,disabled:false,setAttribute(){},classList:{value:false,toggle(){this.value=!this.value},contains(){return this.value},remove(){this.value=false}}};
   const shadow={querySelector:s=>els[s],set innerHTML(v){this.html=v}};
-  const root={style:{},attachShadow:()=>shadow,remove(){}};
+  const root={dataset:{},style:{},attachShadow:()=>shadow,remove(){this.isConnected=false;this.parentElement=null}};
+  const parent={}; const persona={parentElement:parent,style:{order:'20'},matches:()=>true,insertAdjacentElement(where,node){assert.equal(where,'afterend');node.parentElement=parent;node.previousElementSibling=this;node.isConnected=true}};
   let id='room1', interval, cleanup; const calls=[];
-  const context={document:{createElement:()=>root,body:{appendChild(){}}},localStorage:{getItem:()=>id},marinara:{fetch:async(url,opt)=>{calls.push({url,opt});return {ok:true,json:async()=>({enabled:false,patches:{app:'ok',prompt:'ok'}})}},onCleanup:f=>cleanup=f},setInterval:f=>(interval=f,1),clearInterval(){},console};
+  let mutation;
+  const context={document:{createElement:()=>root,body:{},querySelector:()=>persona},MutationObserver:class{constructor(fn){mutation=fn}observe(){}disconnect(){}},requestAnimationFrame:fn=>fn(),localStorage:{getItem:()=>id},marinara:{fetch:async(url,opt)=>{calls.push({url,opt});return {ok:true,json:async()=>({enabled:false,patches:{app:'ok',prompt:'ok'}})}},onCleanup:f=>cleanup=f},setInterval:f=>(interval=f,1),clearInterval(){},console};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../extension/extension.js'),'utf8'),context);
+  assert.equal(root.parentElement,parent); assert.equal(root.previousElementSibling,persona); assert.equal(root.style.order,'20');
+  root.parentElement=null; root.isConnected=false; mutation(); assert.equal(root.parentElement,parent);
   els['#open'].onclick(); await new Promise(r=>setImmediate(r));
   assert.match(calls[0].url,/room1$/); assert.equal(els['#enabled'].disabled,false);
   els['#enabled'].checked=true; await els['#enabled'].onchange();
