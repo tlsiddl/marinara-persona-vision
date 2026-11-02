@@ -65,6 +65,7 @@ try {
   pv.saveSetting(dir,chat.id,true);
   body=await generate('two');
   assert(JSON.stringify(body).includes(png.toString('base64')),'enabled must transmit selected avatar to provider');
+  assert(JSON.stringify(body).includes('매 응답마다 반복해서 묘사하지 마'),'enabled request must discourage repeated appearance descriptions');
   const saved=await chats.listMessages(chat.id);
   assert(!JSON.stringify(saved).includes(png.toString('base64')),'avatar must not be saved to chat messages');
   const reply = saved.filter(m=>m.role==='assistant').at(-1);

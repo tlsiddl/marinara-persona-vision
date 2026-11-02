@@ -4,7 +4,7 @@ const path = require('node:path');
 const { fileURLToPath, pathToFileURL } = require('node:url');
 const { registerHooks } = require('node:module');
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 const VALID_ID = /^[A-Za-z0-9_-]{1,128}$/;
 const APP_ANCHOR = 'app.addHook("onRequest", androidLocalAuthHook);';
@@ -65,7 +65,7 @@ async function addImage(messages, { chatId, identity, dataDir }) {
   const msg = [...messages].reverse().find(m => m.role === 'user');
   if (!msg) { lastStatus.set(chatId, 'no-user-message'); return; }
   msg.images = [...(msg.images || []), image];
-  msg.content += '\n\n[참고 이미지: 이 이미지 한 장은 현재 사용자의 페르소나 프로필 사진이다. 페르소나의 외형을 참고하되, 현재 장면의 복장이나 행동으로 단정하지 마.]';
+  msg.content += '\n\n[참고 이미지: 이 이미지 한 장은 현재 사용자의 페르소나 프로필 사진이다. 페르소나의 외형을 참고하되, 현재 장면의 복장이나 행동으로 단정하지 마. 장면에 자연스럽게 필요할 때만 외형을 언급하고, 매 응답마다 반복해서 묘사하지 마.]';
   lastStatus.set(chatId, 'prepared');
 }
 async function getDataDir() {

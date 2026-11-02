@@ -35,6 +35,7 @@ test('only enabled room gets selected persona image without changing existing at
   assert.equal(msg[0].images.length, 2);
   assert.equal(msg[0].images[0], 'existing');
   assert.match(msg[0].content, /페르소나 프로필 사진/);
+  assert.match(msg[0].content, /장면에 자연스럽게 필요할 때만 외형을 언급하고, 매 응답마다 반복해서 묘사하지 마/);
   p.saveSetting(tmp, 'room1', false);
   const newTurn = [{role:'user',content:'next'}];
   await p.addImage(newTurn, {chatId:'room1',identity,dataDir:tmp});
