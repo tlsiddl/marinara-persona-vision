@@ -1,0 +1,87 @@
+// Run against a locally built, unmodified 2.5.1 checkout: ENGINE_DIR=/path/to/engine node tests/engine.integration.mjs
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { createRequire, syncBuiltinESMExports } from 'node:module';
+import { createServer } from 'node:http';
+const engine = resolve(process.env.ENGINE_DIR || '../engine');
+const dir = mkdtempSync(join(tmpdir(), 'pv-engine-'));
+process.env.DATA_DIR = dir;
+process.env.FILE_STORAGE_DIR = join(dir, 'storage');
+process.env.NODE_ENV = 'test';
+process.env.MARINARA_LITE = 'true';
+process.env.LOG_LEVEL = 'silent';
+process.env.PERSONA_VISION_TEST = '1';
+const require = createRequire(import.meta.url);
+// Some restricted test sandboxes cannot enumerate network interfaces.
+try { require('node:os').networkInterfaces(); } catch { require('node:os').networkInterfaces = () => ({}); syncBuiltinESMExports(); }
+const requireServer = createRequire(join(engine,'packages/server/package.json'));
+const Fastify = requireServer('fastify');
+const pv = require('../server/persona-vision.cjs');
+pv.install();
+const load = (file) => import(pathToFileURL(join(engine, file)).href);
+const { getDB, closeDB } = await load('packages/server/dist/db/connection.js');
+const { generateRoutes } = await load('packages/server/dist/routes/generate.routes.js');
+const { createChatsStorage } = await load('packages/server/dist/services/storage/chats.storage.js');
+const { createConnectionsStorage } = await load('packages/server/dist/services/storage/connections.storage.js');
+const { createCharactersStorage } = await load('packages/server/dist/services/storage/characters.storage.js');
+const { createPromptsStorage } = await load('packages/server/dist/services/storage/prompts.storage.js');
+const { characterDataSchema } = await load('packages/shared/dist/index.js');
+const requests = [];
+const provider = createServer(async (req,res) => {
+  const chunks=[]; for await (const chunk of req) chunks.push(chunk);
+  requests.push(JSON.parse(Buffer.concat(chunks).toString()));
+  res.writeHead(200, {'content-type':'text/event-stream'});
+  res.end('data: '+JSON.stringify({choices:[{index:0,delta:{content:'Hello.'},finish_reason:null}]})+'\n\ndata: '+JSON.stringify({choices:[{index:0,delta:{},finish_reason:'stop'}]})+'\n\ndata: [DONE]\n\n');
+});
+const db = await getDB();
+const chats = createChatsStorage(db), characters = createCharactersStorage(db), app=Fastify();
+app.decorate('db',db); app.decorate('activeGenerations',new Map());
+await app.register(generateRoutes,{prefix:'/api/generate'});
+try {
+  mkdirSync(join(dir,'avatars'));
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/aXQAAAAASUVORK5CYII=','base64');
+  writeFileSync(join(dir,'avatars','persona.png'),png);
+  await new Promise(done=>provider.listen(0,'127.0.0.1',done));
+  const connection=await createConnectionsStorage(db).create({name:'fixture',provider:'custom',baseUrl:`http://127.0.0.1:${provider.address().port}/v1`,model:'fixture',apiKey:'x',maxContext:32768,maxTokensOverride:512});
+  const character=await characters.create(characterDataSchema.parse({name:'Alice'}));
+  const persona=await characters.createPersona('Mari','The player.','/api/avatars/file/persona.png');
+  const presets=createPromptsStorage(db);
+  const preset=await presets.create({name:'fixture',parameters:{maxTokens:512,maxContext:32768,strictRoleFormatting:true},wrapFormat:'xml'});
+  await presets.createSection({presetId:preset.id,identifier:'rules',name:'Rules',content:'Respond as {{char}}.'});
+  await presets.createSection({presetId:preset.id,identifier:'history',name:'History',isMarker:true,markerConfig:{type:'chat_history'}});
+  const chat=await chats.create({name:'vision test',mode:'roleplay',characterIds:[character.id],personaId:persona.id,connectionId:connection.id,promptPresetId:preset.id});
+  await chats.patchMetadata(chat.id,{enableAgents:false,enableTools:false,enableMemoryRecall:false});
+  const generate=async text=>{
+    const response=await app.inject({method:'POST',url:'/api/generate/',payload:{chatId:chat.id,userMessage:text}});
+    assert.equal(response.statusCode,200,response.body);
+    assert(!response.body.includes('"type":"error"'),response.body);
+    return requests.at(-1);
+  };
+  let body=await generate('one');
+  assert(!JSON.stringify(body).includes(png.toString('base64')),'disabled must not transmit image');
+  pv.saveSetting(dir,chat.id,true);
+  body=await generate('two');
+  assert(JSON.stringify(body).includes(png.toString('base64')),'enabled must transmit selected avatar to provider');
+  const saved=await chats.listMessages(chat.id);
+  assert(!JSON.stringify(saved).includes(png.toString('base64')),'avatar must not be saved to chat messages');
+  const reply = saved.filter(m=>m.role==='assistant').at(-1);
+  assert(reply,'assistant reply exists');
+  let response=await app.inject({method:'POST',url:'/api/generate/',payload:{chatId:chat.id,regenerateMessageId:reply.id}});
+  assert.equal(response.statusCode,200,response.body); assert(!response.body.includes('"type":"error"'),response.body);
+  assert(JSON.stringify(requests.at(-1)).includes(png.toString('base64')),'regeneration transmits avatar');
+  response=await app.inject({method:'POST',url:'/api/generate/',payload:{chatId:chat.id,continueMessageId:reply.id}});
+  assert.equal(response.statusCode,200,response.body); assert(!response.body.includes('"type":"error"'),response.body);
+  assert(JSON.stringify(requests.at(-1)).includes(png.toString('base64')),'continuation transmits avatar');
+  await characters.updatePersona(persona.id,{avatarPath:null});
+  body=await generate('no avatar');
+  assert(!JSON.stringify(body).includes(png.toString('base64')),'removing avatar must stop transmission');
+  await characters.updatePersona(persona.id,{avatarPath:'/api/avatars/file/persona.png'});
+  pv.saveSetting(dir,chat.id,false);
+  body=await generate('three');
+  assert(!JSON.stringify(body).includes(png.toString('base64')),'turning off must stop transmission');
+  assert.equal(pv.patches.prompt,'ok');
+  console.log('2.5.1 provider request: off → on → regeneration → continuation → missing image → off; no image saved in chat: PASS');
+} finally { await app.close(); await closeDB(); provider.closeAllConnections?.(); await new Promise(r=>provider.close(r)); rmSync(dir,{recursive:true,force:true}); }
