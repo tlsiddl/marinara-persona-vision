@@ -7,12 +7,12 @@
   const shadow = root.attachShadow({ mode:'open' });
   shadow.innerHTML = `<style>
 :host{font-family:var(--font-y2k,inherit);color:var(--foreground,#e8e2d4)}*{box-sizing:border-box}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--primary,#bdb29a);outline-offset:2px}
-#open{display:flex;align-items:center;gap:8px;width:100%;min-height:42px;padding:10px 16px;border:0;border-bottom:1px solid var(--border,#817d70);background:transparent;color:var(--foreground,#e8e2d4);text-align:left;font-size:12px;font-weight:600}
-.open-icon{display:block;flex:none;width:14px;height:14px;opacity:.7}.title{flex:1}.chevron{width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);opacity:.65;transition:transform .15s}#open[aria-expanded="true"] .chevron{transform:rotate(225deg) translate(-2px,-1px)}
+#open{display:flex;align-items:center;gap:var(--pv-gap,8px);width:100%;min-height:var(--pv-height,42px);padding:var(--pv-padding,10px 16px);border:0;border-bottom:1px solid var(--border,#817d70);background:transparent;color:var(--foreground,#e8e2d4);text-align:left;font-size:var(--pv-font-size,12px);font-weight:var(--pv-font-weight,600);font-family:var(--pv-font-family,var(--font-y2k,inherit));line-height:var(--pv-line-height,normal);letter-spacing:var(--pv-letter-spacing,normal)}
+.open-icon{display:block;flex:none;width:var(--pv-icon-width,14px);height:var(--pv-icon-height,14px);color:var(--pv-icon-color,currentColor)}.title{flex:1;color:var(--pv-title-color,inherit)}.chevron{width:var(--pv-arrow-width,12px);height:var(--pv-arrow-height,12px);color:var(--pv-arrow-color,currentColor);flex:none;transition:transform .15s}#open[aria-expanded="true"] .chevron{transform:rotate(180deg)}
 section{display:none;padding:10px 16px 13px;color:var(--foreground,#e8e2d4);border-bottom:1px solid var(--border,#817d70);font-size:11px}section.open{display:block}.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:42px;cursor:pointer}.toggle-copy{line-height:1.5}.toggle-copy small{display:block;color:var(--muted-foreground,#aaa598);font-size:10px;margin-top:2px}.switch{position:relative;display:inline-flex;flex:none}.switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}.track{display:block;width:31px;height:18px;border:1px solid var(--muted-foreground,#aaa598);border-radius:20px;background:var(--background,#171717);transition:background .15s}.track:after{content:'';display:block;width:12px;height:12px;margin:2px;background:var(--muted-foreground,#aaa598);border-radius:50%;transition:transform .15s,background .15s}.switch input:checked+.track{background:var(--primary,#e8e2d4)}.switch input:checked+.track:after{transform:translateX(13px);background:var(--primary-foreground,#171717)}.switch input:focus-visible+.track{outline:2px solid var(--primary,#bdb29a);outline-offset:3px}.switch input:disabled+.track{opacity:.5}
 .note{display:flex;gap:7px;margin:9px 0 0;color:var(--muted-foreground,#aaa598);font-size:10px;line-height:1.6}.note-star{flex:none;opacity:.8}.note p{margin:0}#state,#error{margin:8px 0 0;font-size:11.5px;line-height:1.55}#state:empty,#error:empty{display:none}#error{color:var(--destructive,#d76a62);white-space:pre-wrap}
 </style>
-<button id="open" type="button" aria-expanded="false"><svg class="open-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg><span class="title">프사 인식</span><span class="chevron" aria-hidden="true"></span></button>
+<button id="open" type="button" aria-expanded="false"><svg class="open-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg><span class="title">프사 인식</span><svg class="chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
 <section aria-label="페르소나 프사 인식">
   <label class="toggle-row"><span class="toggle-copy">이 채팅방에서 프사 보내기<small>현재 선택한 페르소나의 프로필 이미지</small></span><span class="switch"><input type="checkbox" id="enabled"><span class="track" aria-hidden="true"></span></span></label>
   <div class="note"><span class="note-star" aria-hidden="true">✧</span><p>켜면 RP 요청마다 프사가 모델로 전송돼요.<br>이미지 입력 비용이 추가될 수 있어요.</p></div>
@@ -21,12 +21,45 @@ section{display:none;padding:10px 16px 13px;color:var(--foreground,#e8e2d4);bord
 `;
   // Mount beside the current RP persona section. React may recreate the drawer,
   // so reattach only when that happens; never place a floating button on screen.
+  let measuredPersona = null;
+  const dimensionObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(() => syncNativeStyles(measuredPersona)) : null;
+  function syncNativeStyles(persona) {
+    if (!persona || typeof getComputedStyle !== 'function') return;
+    const header = persona.querySelector('.mari-drawer__header');
+    const title = persona.querySelector('.mari-drawer__title');
+    const icon = persona.querySelector('.mari-drawer__icon svg');
+    const arrow = persona.querySelector('.mari-drawer__arrow');
+    const nativeToggle = persona.querySelector('[data-drawer-toggle]');
+    const set = (name, value) => { if (value && root.style.getPropertyValue(name) !== value) root.style.setProperty(name, value); };
+    if (header) {
+      const style = getComputedStyle(header);
+      set('--pv-padding', style.padding);
+      // offsetHeight is in CSS pixels and ignores browser zoom. A hidden drawer
+      // reports zero; ResizeObserver updates it when the drawer becomes visible.
+      if (header.offsetHeight > 0) set('--pv-height', `${header.offsetHeight}px`);
+    }
+    if (title) {
+      const style = getComputedStyle(title);
+      for (const [name, prop] of [['--pv-font-size','fontSize'],['--pv-font-weight','fontWeight'],['--pv-font-family','fontFamily'],['--pv-line-height','lineHeight'],['--pv-letter-spacing','letterSpacing'],['--pv-title-color','color']]) set(name, style[prop]);
+    }
+    if (nativeToggle) set('--pv-gap', getComputedStyle(nativeToggle).columnGap);
+    if (icon) { const style = getComputedStyle(icon); set('--pv-icon-width', style.width); set('--pv-icon-height', style.height); set('--pv-icon-color', style.color); }
+    if (arrow) { const style = getComputedStyle(arrow); set('--pv-arrow-width', style.width); set('--pv-arrow-height', style.height); set('--pv-arrow-color', style.color); }
+  }
   function mountInChatSettings() {
     const persona = document.querySelector('.mari-chat-settings-drawer [data-chat-settings-section="roleplay-persona"]');
     if (!persona || !persona.parentElement) { if (root.isConnected) root.remove(); return; }
     const parent = persona.parentElement;
     if (root.parentElement !== parent || root.previousElementSibling !== persona) persona.insertAdjacentElement('afterend', root);
     root.style.order = persona.style.order;
+    if (measuredPersona !== persona) {
+      dimensionObserver?.disconnect(); measuredPersona = persona;
+      const header = persona.querySelector('.mari-drawer__header');
+      const title = persona.querySelector('.mari-drawer__title');
+      if (header) dimensionObserver?.observe(header);
+      if (title) dimensionObserver?.observe(title);
+    }
+    syncNativeStyles(persona);
   }
   let mountPending = false, disposed = false;
   const observer = new MutationObserver(() => {
@@ -36,6 +69,10 @@ section{display:none;padding:10px 16px 13px;color:var(--foreground,#e8e2d4);bord
     requestAnimationFrame(() => { mountPending = false; if (!disposed) mountInChatSettings(); });
   });
   observer.observe(document.body, { childList: true, subtree: true });
+  const themeObserver = new MutationObserver(() => syncNativeStyles(measuredPersona));
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class', 'data-theme'] });
+  window.addEventListener('resize', syncOnResize);
+  function syncOnResize() { syncNativeStyles(measuredPersona); }
   mountInChatSettings();
   const q = (s) => shadow.querySelector(s), panel = q('section'), box = q('#enabled'), state = q('#state'), error = q('#error');
   const chatId = () => { try { return localStorage.getItem('marinara-active-chat-id') || ''; } catch { return ''; } };
@@ -66,5 +103,5 @@ section{display:none;padding:10px 16px 13px;color:var(--foreground,#e8e2d4);bord
     if (id === chatId()) box.disabled = false; else void load();
   };
   const timer = setInterval(() => { if (panel.classList.contains('open') && renderedId !== chatId()) void load(); }, 1000);
-  host.onCleanup?.(() => { disposed = true; observer.disconnect(); clearInterval(timer); root.remove(); });
+  host.onCleanup?.(() => { disposed = true; observer.disconnect(); themeObserver.disconnect(); dimensionObserver?.disconnect(); window.removeEventListener('resize', syncOnResize); clearInterval(timer); root.remove(); });
 })();

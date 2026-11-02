@@ -3,13 +3,17 @@ const test=require('node:test'), assert=require('node:assert/strict'), fs=requir
 test('UI reads current room, saves toggle and rechecks after a room change',async()=>{
   const els={}; for(const k of ['section','#enabled','#state','#error','#open','#close']) els[k]={textContent:'',checked:false,disabled:false,setAttribute(){},classList:{value:false,toggle(){this.value=!this.value},contains(){return this.value},remove(){this.value=false}}};
   const shadow={querySelector:s=>els[s],set innerHTML(v){this.html=v}};
-  const root={dataset:{},style:{},attachShadow:()=>shadow,remove(){this.isConnected=false;this.parentElement=null}};
-  const parent={}; const persona={parentElement:parent,style:{order:'20'},matches:()=>true,insertAdjacentElement(where,node){assert.equal(where,'afterend');node.parentElement=parent;node.previousElementSibling=this;node.isConnected=true}};
+  const props={}; const root={dataset:{},style:{getPropertyValue:k=>props[k]||'',setProperty:(k,v)=>props[k]=v},attachShadow:()=>shadow,remove(){this.isConnected=false;this.parentElement=null}};
+  const header={offsetHeight:51,style:{padding:'12px 16px'}}, title={style:{fontSize:'16px',fontWeight:'700',fontFamily:'Test Font',lineHeight:'24px',letterSpacing:'normal',color:'rgb(210, 210, 210)'}}, icon={style:{width:'17px',height:'17px',color:'rgb(150, 150, 150)'}}, arrow={style:{width:'12px',height:'12px',color:'rgb(150, 150, 150)'}}, toggle={style:{columnGap:'8px'}};
+  const nodes={'.mari-drawer__header':header,'.mari-drawer__title':title,'.mari-drawer__icon svg':icon,'.mari-drawer__arrow':arrow,'[data-drawer-toggle]':toggle};
+  const parent={}; const persona={parentElement:parent,style:{order:'20'},querySelector:s=>nodes[s],matches:()=>true,insertAdjacentElement(where,node){assert.equal(where,'afterend');node.parentElement=parent;node.previousElementSibling=this;node.isConnected=true}};
   let id='room1', interval, cleanup; const calls=[];
   let mutation;
-  const context={document:{createElement:()=>root,body:{},querySelector:()=>persona},MutationObserver:class{constructor(fn){mutation=fn}observe(){}disconnect(){}},requestAnimationFrame:fn=>fn(),localStorage:{getItem:()=>id},marinara:{fetch:async(url,opt)=>{calls.push({url,opt});return {ok:true,json:async()=>({enabled:false,patches:{app:'ok',prompt:'ok'}})}},onCleanup:f=>cleanup=f},setInterval:f=>(interval=f,1),clearInterval(){},console};
+  const body={};const context={document:{createElement:()=>root,body,documentElement:{},querySelector:()=>persona},window:{addEventListener(){},removeEventListener(){}},getComputedStyle:node=>node.style,MutationObserver:class{constructor(fn){this.fn=fn}observe(target){if(target===body)mutation=this.fn}disconnect(){}},requestAnimationFrame:fn=>fn(),localStorage:{getItem:()=>id},marinara:{fetch:async(url,opt)=>{calls.push({url,opt});return {ok:true,json:async()=>({enabled:false,patches:{app:'ok',prompt:'ok'}})}},onCleanup:f=>cleanup=f},setInterval:f=>(interval=f,1),clearInterval(){},console};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../extension/extension.js'),'utf8'),context);
   assert.equal(root.parentElement,parent); assert.equal(root.previousElementSibling,persona); assert.equal(root.style.order,'20');
+  assert.equal(props['--pv-height'],'51px'); assert.equal(props['--pv-font-size'],'16px'); assert.equal(props['--pv-padding'],'12px 16px'); assert.equal(props['--pv-icon-width'],'17px'); assert.equal(props['--pv-arrow-width'],'12px');
+  header.offsetHeight=57; title.style.fontSize='18px'; root.parentElement=null; root.isConnected=false; mutation(); assert.equal(props['--pv-height'],'57px'); assert.equal(props['--pv-font-size'],'18px');
   root.parentElement=null; root.isConnected=false; mutation(); assert.equal(root.parentElement,parent);
   els['#open'].onclick(); await new Promise(r=>setImmediate(r));
   assert.match(calls[0].url,/room1$/); assert.equal(els['#enabled'].disabled,false);
