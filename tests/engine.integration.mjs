@@ -24,6 +24,7 @@ pv.install();
 const load = (file) => import(pathToFileURL(join(engine, file)).href);
 const { getDB, closeDB } = await load('packages/server/dist/db/connection.js');
 const { generateRoutes } = await load('packages/server/dist/routes/generate.routes.js');
+const { chatsRoutes } = await load('packages/server/dist/routes/chats.routes.js');
 const { createChatsStorage } = await load('packages/server/dist/services/storage/chats.storage.js');
 const { createConnectionsStorage } = await load('packages/server/dist/services/storage/connections.storage.js');
 const { createCharactersStorage } = await load('packages/server/dist/services/storage/characters.storage.js');
@@ -40,6 +41,7 @@ const db = await getDB();
 const chats = createChatsStorage(db), characters = createCharactersStorage(db), app=Fastify();
 app.decorate('db',db); app.decorate('activeGenerations',new Map());
 await app.register(generateRoutes,{prefix:'/api/generate'});
+await app.register(chatsRoutes,{prefix:'/api/chats'});
 try {
   mkdirSync(join(dir,'avatars'));
   const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/aXQAAAAASUVORK5CYII=','base64');
@@ -54,6 +56,16 @@ try {
   await presets.createSection({presetId:preset.id,identifier:'history',name:'History',isMarker:true,markerConfig:{type:'chat_history'}});
   const chat=await chats.create({name:'vision test',mode:'roleplay',characterIds:[character.id],personaId:persona.id,connectionId:connection.id,promptPresetId:preset.id});
   await chats.patchMetadata(chat.id,{enableAgents:false,enableTools:false,enableMemoryRecall:false});
+  await chats.createMessage({chatId:chat.id,role:'user',content:'Begin.'});
+  const peek = async () => { const r=await app.inject({method:'POST',url:`/api/chats/${chat.id}/peek-prompt`,payload:{}}); assert.equal(r.statusCode,200,r.body); return r.json(); };
+  let preview=await peek(); assert(!JSON.stringify(preview).includes('페르소나 프사가 요청에 포함될 예정'));
+  pv.saveSetting(dir,chat.id,true);
+  preview=await peek(); assert.equal(preview.source,'live_preview'); assert(JSON.stringify(preview).includes('페르소나 프사가 요청에 포함될 예정'));
+  assert(!JSON.stringify(preview).includes(png.toString('base64')),'peek preview must not expose image bytes');
+  let dry=await app.inject({method:'POST',url:'/api/generate/dryRun',payload:{chatId:chat.id,returnPrompt:true}});
+  assert.equal(dry.statusCode,200,dry.body); assert(JSON.stringify(dry.json()).includes('페르소나 프사가 요청에 포함될 예정'));
+  assert(JSON.stringify(dry.json()).includes(png.toString('base64')),'read-only dry run includes current image');
+  pv.saveSetting(dir,chat.id,false);
   const generate=async text=>{
     const response=await app.inject({method:'POST',url:'/api/generate/',payload:{chatId:chat.id,userMessage:text}});
     assert.equal(response.statusCode,200,response.body);
@@ -66,6 +78,7 @@ try {
   body=await generate('two');
   assert(JSON.stringify(body).includes(png.toString('base64')),'enabled must transmit selected avatar to provider');
   assert(JSON.stringify(body).includes('매 응답마다 반복해서 묘사하지 마'),'enabled request must discourage repeated appearance descriptions');
+  preview=await peek(); assert.equal(preview.source,'cached'); assert(JSON.stringify(preview).includes('매 응답마다 반복해서 묘사하지 마'));
   const saved=await chats.listMessages(chat.id);
   assert(!JSON.stringify(saved).includes(png.toString('base64')),'avatar must not be saved to chat messages');
   const reply = saved.filter(m=>m.role==='assistant').at(-1);
