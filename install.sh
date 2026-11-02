@@ -48,7 +48,9 @@ for config in "${config_list[@]}"; do
 done
 args+=(-f "$override")
 (cd "$project_dir" && docker compose "${args[@]}" config -q) || fail 'Compose 설정 검증에 실패했습니다. 기존 컨테이너는 변경하지 않았습니다.'
-(cd "$project_dir" && docker compose "${args[@]}" up -d --no-deps "$service") || fail '서버 재시작에 실패했습니다.'
+# The runtime is bind-mounted as a single file. Replacing it with mv changes its
+# inode; a plain restart or unchanged compose up can keep the old mounted file.
+(cd "$project_dir" && docker compose "${args[@]}" up -d --no-deps --force-recreate "$service") || fail '서버 재시작에 실패했습니다.'
 printf '\n설치 완료. 앞으로 compose up을 직접 실행할 때 다음 파일을 함께 지정해야 합니다:\n'
 printf '  docker compose'; printf ' %q' "${args[@]}"; printf ' up -d\n'
 printf '기억 서재 등 기존 NODE_OPTIONS를 보존했습니다. 서버 로그에서 [persona-vision] app: ok 와 prompt: ok 를 확인하세요.\n'

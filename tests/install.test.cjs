@@ -21,6 +21,6 @@ test('compose install preserves memory NODE_OPTIONS and existing files', () => {
     assert.match(override,/memory-module\/marinara-memory-runtime\.cjs/);
     assert.match(override,/persona-vision\/persona-vision\.cjs/);
     assert.match(fs.readFileSync(path.join(project,'calls'),'utf8'),/config -q/);
-    assert.match(fs.readFileSync(path.join(project,'calls'),'utf8'),/up -d --no-deps marinara/);
+    assert.match(fs.readFileSync(path.join(project,'calls'),'utf8'),/up -d --no-deps --force-recreate marinara/);
   } finally { fs.rmSync(root,{recursive:true,force:true}); }
 });
