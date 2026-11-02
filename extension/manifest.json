@@ -3,7 +3,7 @@
   "version": 1,
   "config": {
     "name": "페르소나 프사 인식",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "현재 채팅방에서 페르소나 프사를 RP 모델에 전달하도록 설정합니다. 별도 서버 패치가 필요합니다.",
     "runtime": "client",
     "enabled": false,

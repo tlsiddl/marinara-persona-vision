@@ -12,7 +12,7 @@
 curl -fsSL https://raw.githubusercontent.com/tlsiddl/marinara-persona-vision/main/install.sh | bash
 ```
 
-설치 후 마리나라 설정의 외부 확장에서 [화면 확장 ZIP](deliverable/persona-vision-0.1.0.personal-extension.zip)을 가져와 검토 후 켭니다. 채팅방을 열고 **프사 인식** 버튼에서 이 방의 전송을 켭니다. 화면 확장만 설치하면 작동하지 않습니다.
+설치 후 마리나라 설정의 외부 확장에서 [화면 확장 ZIP](deliverable/persona-vision-0.1.1.personal-extension.zip)을 가져와 검토 후 켭니다. 채팅방을 열고 **프사 인식** 버튼에서 이 방의 전송을 켭니다. 화면 확장만 설치하면 작동하지 않습니다.
 
 설치 과정에서 서버가 재생성됩니다. 여러 마리나라 컨테이너가 있으면 `MARINARA_CONTAINER=컨테이너이름 bash install.sh`로 대상을 지정하세요. 서버 로그에 `[persona-vision] app: ok`와 `[persona-vision] prompt: ok`가 보여야 합니다. `failed`라면 사용 중인 서버 파일이 지원 대상과 달라 해당 패치는 적용되지 않습니다.
 

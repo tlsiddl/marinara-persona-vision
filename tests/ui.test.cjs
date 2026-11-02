@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'), assert=require('node:assert/strict'), fs=require('node:fs'), path=require('node:path'), vm=require('node:vm');
 test('UI reads current room, saves toggle and rechecks after a room change',async()=>{
-  const els={}; for(const k of ['section','#enabled','#state','#error','#open','#close']) els[k]={textContent:'',checked:false,disabled:false,classList:{value:false,toggle(){this.value=!this.value},contains(){return this.value},remove(){this.value=false}}};
+  const els={}; for(const k of ['section','#enabled','#state','#error','#open','#close']) els[k]={textContent:'',checked:false,disabled:false,setAttribute(){},classList:{value:false,toggle(){this.value=!this.value},contains(){return this.value},remove(){this.value=false}}};
   const shadow={querySelector:s=>els[s],set innerHTML(v){this.html=v}};
   const root={style:{},attachShadow:()=>shadow,remove(){}};
   let id='room1', interval, cleanup; const calls=[];
