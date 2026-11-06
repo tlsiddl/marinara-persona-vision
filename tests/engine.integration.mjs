@@ -1,4 +1,4 @@
-// Run against a locally built, unmodified 2.5.1 checkout: ENGINE_DIR=/path/to/engine node tests/engine.integration.mjs
+// Run against a built, unmodified engine: ENGINE_DIR=/path/to/engine node tests/engine.integration.mjs
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -97,5 +97,5 @@ try {
   body=await generate('three');
   assert(!JSON.stringify(body).includes(png.toString('base64')),'turning off must stop transmission');
   assert.equal(pv.patches.prompt,'ok');
-  console.log('2.5.1 provider request: off → on → regeneration → continuation → missing image → off; no image saved in chat: PASS');
+  console.log('Engine provider request: off → on → regeneration → continuation → missing image → off; no image saved in chat: PASS');
 } finally { await app.close(); await closeDB(); provider.closeAllConnections?.(); await new Promise(r=>provider.close(r)); rmSync(dir,{recursive:true,force:true}); }

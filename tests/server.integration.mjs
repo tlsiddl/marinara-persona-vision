@@ -22,5 +22,5 @@ try {
   r=await app.inject({method:'PUT',url:'/api/persona-vision/test-room',headers:{host:'localhost'},payload:{enabled:false}});
   assert.equal(r.statusCode,200,r.body); assert.equal((await get()).json().enabled,false);
   assert.equal(pv.patches.app,'ok');
-  console.log('2.5.1 application settings API: off → on → off: PASS');
+  console.log('Engine application settings API: off → on → off: PASS');
 } finally { await app.close(); rmSync(dir,{recursive:true,force:true}); }
